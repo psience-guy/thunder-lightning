@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/fireball-dft/fireball-lightning.svg?branch=master)](https://travis-ci.org/fireball-dft/fireball-lightning)
+# thunder-lightning
+This repository contains the sources to create one driver:
 
-Fireball-Lightning
-==================
+lightning.x
 
-This repository contains the sources to create the
-driver lightning.x.
-This is a fast-energy only calculator.
+This driver reads and interpolates all the multi-center interections and i
+builds the tight-binding Hamiltonian.  This executable is an energy-only
+calculator. Use the full fireball.x to do molecular dynamics simulations. 
