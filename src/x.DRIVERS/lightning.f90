@@ -316,6 +316,7 @@
             else
               exit
             end if
+            if (ifix_CHARGES .eq. 1) exit
           end do
 
           if (iwriteout_populations .eq. 1) call calculate_populations (s)
