@@ -269,7 +269,7 @@
           sigma = 999.0d0
           iscf_iteration = 1
           do while (sigma .gt. scf_tolerance_set .and.                       &
-      &             iscf_iteration .le. max_scf_iterations_set)
+      &             iscf_iteration .le. max_scf_iterations_set - 1)
             write (s%logfile, *)
             write (s%logfile, *) ' Begin scf step = ', iscf_iteration
             write (s%logfile, *) ' Calling two-center charge dependent assemblers. '
@@ -296,9 +296,11 @@
             call density_matrix (s)
             if (iwriteout_density .eq. 1) call writeout_density (s)
 
-            call calculate_charges (s)
+            if (ifix_CHARGES .ne. 1) then
+              call calculate_charges (s)
+              call Qmixer (s, iscf_iteration, sigma)
+            end if
             if (iwriteout_charges .eq. 1) call writeout_charges (s)
-            call Qmixer (s, iscf_iteration, sigma)
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
