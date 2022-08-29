@@ -1,24 +1,26 @@
 ! copyright info:
 !
-!                             @Copyright 2013
+!                             @Copyright 2022
 !                           Fireball Committee
-! West Virginia University - James P. Lewis, Chair
-! Arizona State University - Otto F. Sankey
-! Universidad Autonoma de Madrid - Jose Ortega
+! Hong Kong Quantum AI Laboratory, Ltd. - James P. Lewis, Chair
+! Universidad de Madrid - Jose Ortega
 ! Academy of Sciences of the Czech Republic - Pavel Jelinek
+! Arizona State University - Otto F. Sankey
 
 ! Previous and/or current contributors:
 ! Auburn University - Jian Jun Dong
-! Caltech - Brandon Keith
+! California Institute of Technology - Brandon Keith
+! Czech Institute of Physics - Prokop Hapala
+! Czech Institute of Physics - Vladimír Zobač
 ! Dublin Institute of Technology - Barry Haycock
 ! Pacific Northwest National Laboratory - Kurt Glaesemann
 ! University of Texas at Austin - Alex Demkov
 ! Ohio University - Dave Drabold
+! Synfuels China Technology Co., Ltd. - Pengju Ren
 ! Washington University - Pete Fedders
 ! West Virginia University - Ning Ma and Hao Wang
 ! also Gary Adams, Juergen Frisch, John Tomfohr, Kevin Schmidt,
 !      and Spencer Shellman
-
 !
 ! RESTRICTED RIGHTS LEGEND
 ! Use, duplication, or disclosure of this software and its documentation
@@ -114,6 +116,7 @@
         interface
           subroutine Qmixer (t, iscf_iteration, sigma)
           use M_configuraciones
+          use M_charges
             type(T_structure), target :: t
             integer, intent (in) :: iscf_iteration
             real, intent (inout) :: sigma
@@ -122,6 +125,8 @@
 
         interface
           subroutine writeout_energies (t, ebs, uii_uee, uxcdcc)
+          use M_assemble_blocks
+          use M_species
           use M_configuraciones
             type(T_structure), target :: t
             real, intent (in) :: ebs
@@ -132,6 +137,7 @@
 
         interface
           subroutine writeout_xyz (t, ebs, uii_uee, uxcdcc)
+          use M_species
           use M_configuraciones
             type(T_structure), target :: t
             real, intent (in) :: ebs
@@ -142,13 +148,16 @@
 
         interface
           subroutine absorption (t)
+          use M_species
           use M_configuraciones
+          use M_atom_functions
             type(T_structure), target :: t
           end subroutine absorption
         end interface
 
         interface
           subroutine dos (t)
+          use M_species
           use M_configuraciones
             type(T_structure), target :: t
           end subroutine dos
@@ -175,16 +184,30 @@
 !             R E A D   I N   S Y S T E M   I N F O R M A T I O N
 ! ---------------------------------------------------------------------------
 ! ===========================================================================
+        write (ilogfile,'(A)') 'Fdata Setup '
+        write (ilogfile,'(A)') '=========== '
+        write (ilogfile,*)
         call read_Fdata_location
         call read_info
+
+        write (ilogfile,'(A)') 'Hamiltonian Interactions (Fdata) '
+        write (ilogfile,'(A)') '================================ '
+        write (ilogfile,*)
         call read_Fdata_1c
         call read_Fdata_2c
         call read_Fdata_3c
 
 ! Read in the wavefunctions
+        write (ilogfile,*)
+        write (ilogfile,'(A)') 'Sankey-Niklewski wave-functions (Fdata) '
+        write (ilogfile,'(A)') '======================================= '
         call read_wavefunctions
 
 ! Read parameters from structures.inp file
+        write (ilogfile,'(A)') 'Structures '
+        write (ilogfile,'(A)') '========== '
+        write (ilogfile,*)
+
         write (ilogfile,*)
         write (ilogfile,*) ' Reading parameters from the structure input. '
         call read_parameters
@@ -195,8 +218,13 @@
         if (nstructures .gt. 999) then
           stop ' Cannot calculate more than 999 structures! '
         end if
-        write (ilogfile, *) ' Number of structure calculating = ', nstructures
+        write (ilogfile, *) ' Number of structures calculating = ', nstructures
         allocate (structures (nstructures))
+
+        write (ilogfile,*)
+        write (ilogfile,'(A)') 'Execution '
+        write (ilogfile,'(A)') '========= '
+        write (ilogfile,*)
 
 ! Loop over all structures
 ! This loop can be made parallel if each subroutine in lightning
@@ -213,9 +241,13 @@
             slogfile = trim(slogfile)//'.log'
             open (unit = s%logfile, file = slogfile, status = 'replace')
           end if
-          write (ilogfile,*)
-          write (ilogfile, 100) slogfile
+
+          write (s%logfile,'(A)') 'Structure'
+          write (s%logfile,'(A)') '========='
+          write (s%logfile,*)         
+
           write (s%logfile, *) ' Structure = ', istructure
+          write (s%logfile,*)         
 
           ! Read in the coordinates and parameters
           call read_positions (s)
@@ -269,7 +301,7 @@
           sigma = 999.0d0
           iscf_iteration = 1
           do while (sigma .gt. scf_tolerance_set .and.                       &
-      &             iscf_iteration .le. max_scf_iterations_set)
+      &             iscf_iteration .le. max_scf_iterations_set - 1)
             write (s%logfile, *)
             write (s%logfile, *) ' Begin scf step = ', iscf_iteration
             write (s%logfile, *) ' Calling two-center charge dependent assemblers. '
@@ -296,9 +328,11 @@
             call density_matrix (s)
             if (iwriteout_density .eq. 1) call writeout_density (s)
 
-            call calculate_charges (s)
+            if (ifix_CHARGES .ne. 1) then
+              call calculate_charges (s)
+              call Qmixer (s, iscf_iteration, sigma)
+            end if
             if (iwriteout_charges .eq. 1) call writeout_charges (s)
-            call Qmixer (s, iscf_iteration, sigma)
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
