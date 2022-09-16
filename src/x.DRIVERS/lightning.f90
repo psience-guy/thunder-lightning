@@ -303,7 +303,11 @@
           do while (sigma .gt. scf_tolerance_set .and.                       &
       &             iscf_iteration .le. max_scf_iterations_set - 1)
             write (s%logfile, *)
-            write (s%logfile, *) ' Begin scf step = ', iscf_iteration
+            write (s%logfile, '(A, I5, A7, I5, A1)')                         &
+      &      'Self-Consistent Field step: ', iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
+            write (s%logfile, '(A)') '----------------------------------------------------'
+            write (s%logfile, *)
+
             write (s%logfile, *) ' Calling two-center charge dependent assemblers. '
             call assemble_vna_2c (s)
             call assemble_ewaldsr (s)
@@ -311,6 +315,8 @@
 
             write (s%logfile, *) ' Calling three-center charge dependent assemblers. '
             call assemble_vna_3c (s)
+
+            write (s%logfile, *) ' Exchange-correlation assemblers. '
             call assemble_vxc (s)
 
 ! ===========================================================================
