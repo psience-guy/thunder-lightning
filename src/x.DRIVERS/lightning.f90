@@ -106,11 +106,11 @@
 ! --------------------------------------------------------------------------
         real time_begin
         real time_end
-        real timei, timef
 
 ! Energies
-        real ebs                                     ! band-structure energy
-        real uii_uee, uxcdcc                         ! short-range energies
+        real ebs                                 ! band-structure energy
+        real uii_uee, uxcdcc                     ! short-range energies
+        real etot                                ! total energy
 
 ! Interfaces
         interface
@@ -300,22 +300,24 @@
 ! ===========================================================================
           sigma = 999.0d0
           iscf_iteration = 1
-          do while (sigma .gt. scf_tolerance_set .and.                       &
+          do while (sigma .gt. scf_tolerance_set .and.                        &
       &             iscf_iteration .le. max_scf_iterations_set - 1)
             write (s%logfile, *)
-            write (s%logfile, '(A, I5, A7, I5, A1)')                         &
-      &      'Self-Consistent Field step: ', iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
+            write (s%logfile, '(A, I5, A7, I5, A1)') 'Self-Consistent Field step: ', &
+      &            iscf_iteration, ' (max: ', max_scf_iterations_set, ')'
             write (s%logfile, '(A)') '----------------------------------------------------'
             write (s%logfile, *)
 
-            write (s%logfile, *) ' Calling two-center charge dependent assemblers. '
+            write (s%logfile, *) ' Two-center charge dependent assemblers. '
             call assemble_vna_2c (s)
             call assemble_ewaldsr (s)
             call assemble_ewaldlr (s)
 
-            write (s%logfile, *) ' Calling three-center charge dependent assemblers. '
+            write (s%logfile, *)
+            write (s%logfile, *) ' Three-center charge dependent assemblers. '
             call assemble_vna_3c (s)
 
+            write (s%logfile, *)
             write (s%logfile, *) ' Exchange-correlation assemblers. '
             call assemble_vxc (s)
 
@@ -326,11 +328,7 @@
 ! ===========================================================================
 ! Calculating the overlap matrix in K space
             write (s%logfile, *) ' Calling kspace: '
-            call cpu_time (timei)
             call driver_kspace (s, iscf_iteration)
-            call cpu_time (timef)
-            write (s%logfile, *)
-            write (s%logfile, *) ' kspace time: ', timef - timei
             call density_matrix (s)
             if (iwriteout_density .eq. 1) call writeout_density (s)
 
@@ -345,12 +343,28 @@
 !                       T O T A L   E N E R G I E S
 ! ---------------------------------------------------------------------------
 ! ===========================================================================
+! short-range interactions (double-counting interactions)
             call calculate_ebs (s, ebs)
+            uii_uee = 0.0d0; uxcdcc = 0.0d0
             call assemble_uee (s, uii_uee)
             call assemble_uxc (s, uxcdcc)
-            call writeout_energies (s, ebs, uii_uee, uxcdcc)
+            ! Evaluate total energy
+            etot = ebs + uii_uee + uxcdcc
+
+            if (sigma .gt. scf_tolerance_set .and.                            &
+      &         iscf_iteration .le. max_scf_iterations_set - 1 .and.          &
+      &         ifix_CHARGES .ne. 1) then
+              write (s%logfile, *) ' Destroy some SCF arrays... '
+              call destroy_denmat (s)
+              call destroy_assemble_ewald (s)
+              call destroy_assemble_vxc (s)
+              call destroy_assemble_vna (s)
+            end if
 
 ! End scf loop
+! After building the density matrix, then we can free up ewald and denmat arrays
+! - we reallocate these during the next SCF cycle anyways.
+! We also free up the vna and vxc arrays if this is not converged.
             if (sigma .gt. 0.0d0) then
               iscf_iteration = iscf_iteration + 1
             else
@@ -359,29 +373,28 @@
             if (ifix_CHARGES .eq. 1) exit
           end do
 
+          call writeout_energies (s, ebs, uii_uee, uxcdcc)
+          call writeout_xyz (s, ebs, uii_uee, uxcdcc)
+
           if (iwriteout_populations .eq. 1) call calculate_populations (s)
-          if (iwriteout_xyz .eq. 1) call writeout_xyz (s, ebs, uii_uee, uxcdcc)
           if (iwriteout_ewf .ne. 0) call project_orbitals_grid (s, 1)
-
-! Destroy Hamiltonian matrix elements storage
-          call destroy_assemble_2c (s)
-          call destroy_assemble_PP_2c (s)
-          call destroy_assemble_vxc_McWEDA (s)
-
-          if (iwriteout_ewf .ne. 0) call destroy_grid
 
 ! Calculate the absorption spectrum.
           if (iwriteout_abs .eq. 1) call absorption (s)
 
 ! Destroy final arrays
-          call destroy_kspace (s)
+          if (iwriteout_ewf .ne. 0) call destroy_grid
           call destroy_denmat (s)
-          call destroy_charges (s)
-
+          call destroy_assemble_2c (s)
+          call destroy_assemble_vna (s)
+          call destroy_assemble_vxc (s)
+          call destroy_assemble_PP_2c (s)
+          call destroy_assemble_ewald (s)
           call destroy_neighbors (s)
           call destroy_neighbors_PP (s)
 
           ! destroy neighbors last
+          call destroy_charges (s)
           deallocate (s%xl) ! where to put this?
 
 ! Calculate the electronic density of states.
