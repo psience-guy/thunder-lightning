@@ -94,12 +94,16 @@
 
 ! Variable Declaration and Description
 ! ===========================================================================
+        integer iatom                     !< counter over atoms and neighbors
+        integer in1
+
         integer iscf_iteration
         integer istructure, iseparate
 
         real sigma
 
         character (len = 25) :: slogfile
+        character (len = 25) :: sjsonfile
 
 ! --------------------------------------------------------------------------
 ! Timer (Intel Fortran)
@@ -109,6 +113,7 @@
 
 ! Energies
         real ebs                                 ! band-structure energy
+        real efermi                              ! Fermi energy
         real uii_uee, uxcdcc                     ! short-range energies
         real etot                                ! total energy
 
@@ -237,10 +242,16 @@
           if (iseparate .eq. 1) then
             s%logfile = istructure + 1000
             s%inpfile = istructure + 2000
+            s%jsonfile = istructure + 3000
             slogfile = s%basisfile(:len(trim(s%basisfile)) - 4)
             slogfile = trim(slogfile)//'.log'
+            sjsonfile = trim(slogfile)//'.json'
             open (unit = s%logfile, file = slogfile, status = 'replace')
+            open (unit = s%jsonfile, file = sjsonfile, status = 'replace')
           end if
+          write (s%jsonfile,'(A)') '{"fireball":['
+          write (s%jsonfile,'(A)') '{'
+          write (ilogfile, 100) s%basisfile
 
           write (s%logfile,'(A)') 'Structure'
           write (s%logfile,'(A)') '========='
@@ -254,6 +265,39 @@
 
           ! Set the charges
           call read_charges (s)
+
+          ! write out stuff to json file
+            write (s%jsonfile,'(A, I5, A)') '      "nstep":', itime_step, ','
+            write (s%jsonfile,'(A)') '      "cell":['
+            write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
+     &        '      [', s%lattice(1)%a(1), ',', s%lattice(1)%a(2), ',',      &
+     &                   s%lattice(1)%a(3),'],'
+            write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
+     &        '      [', s%lattice(2)%a(1), ',', s%lattice(2)%a(2), ',',      &
+     &                   s%lattice(2)%a(3),'],'
+            write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
+     &        '      [', s%lattice(3)%a(1), ',', s%lattice(3)%a(2), ',',      &
+     &                   s%lattice(3)%a(3),']],'
+
+            write (s%jsonfile,'(A)') '      "numbers":['
+            do iatom = 1, s%natoms - 1
+              in1 = s%atom(iatom)%imass
+              write (s%jsonfile,'(16x, i3, A)') species(in1)%nZ, ','
+            end do
+            in1 = s%atom(s%natoms)%imass
+            write (s%jsonfile,'(16x, i3, A)') species(in1)%nZ, '],'
+
+            write (s%jsonfile,'(A)') '      "positions":['
+            do iatom = 1, s%natoms - 1
+              write (s%jsonfile,'(A, 6x, 3(F15.6, A), A)')                    &
+     &          '      [', s%atom(iatom)%ratom(1), ',',                       &
+     &                     s%atom(iatom)%ratom(2), ',',                       &
+     &                     s%atom(iatom)%ratom(3),'],'
+            end do
+            write (s%jsonfile,'(A, 6x, 3(F15.6, A), A)')                      &
+     &        '      [', s%atom(iatom)%ratom(1), ',',                         &
+     &                   s%atom(iatom)%ratom(2), ',',                         &
+     &                   s%atom(iatom)%ratom(3),']],'
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -329,7 +373,7 @@
 ! Calculating the overlap matrix in K space
             write (s%logfile, *) ' Calling kspace: '
             call driver_kspace (s, iscf_iteration)
-            call density_matrix (s)
+            call density_matrix (s, efermi)
             if (iwriteout_density .eq. 1) call writeout_density (s)
 
             if (ifix_CHARGES .ne. 1) then
@@ -372,8 +416,14 @@
             end if
             if (ifix_CHARGES .eq. 1) exit
           end do
-
           call writeout_energies (s, ebs, uii_uee, uxcdcc)
+
+          ! json output for Fermi energy
+          write (s%jsonfile,'(A, F15.6, A)') '      "fermi":', efermi, ','
+
+          ! json output for energy
+          write (s%jsonfile,'(A, F15.6, A)') '      "energy":', etot, ','
+
           call writeout_xyz (s, ebs, uii_uee, uxcdcc)
 
           if (iwriteout_populations .eq. 1) call calculate_populations (s)
