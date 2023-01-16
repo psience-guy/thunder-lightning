@@ -94,12 +94,16 @@
 
 ! Variable Declaration and Description
 ! ===========================================================================
+        integer iatom                     !< counter over atoms and neighbors
+        integer in1
+
         integer iscf_iteration
         integer istructure, iseparate
 
         real sigma
 
         character (len = 25) :: slogfile
+        character (len = 25) :: sjsonfile
 
 ! --------------------------------------------------------------------------
 ! Timer (Intel Fortran)
@@ -237,10 +241,16 @@
           if (iseparate .eq. 1) then
             s%logfile = istructure + 1000
             s%inpfile = istructure + 2000
+            s%jsonfile = istructure + 3000
             slogfile = s%basisfile(:len(trim(s%basisfile)) - 4)
             slogfile = trim(slogfile)//'.log'
+            sjsonfile = trim(slogfile)//'.json'
             open (unit = s%logfile, file = slogfile, status = 'replace')
+            open (unit = s%jsonfile, file = sjsonfile, status = 'replace')
           end if
+          write (s%jsonfile,'(A)') '{"fireball":['
+          write (s%jsonfile,'(A)') '{'
+          write (ilogfile, 100) s%basisfile
 
           write (s%logfile,'(A)') 'Structure'
           write (s%logfile,'(A)') '========='
@@ -254,6 +264,38 @@
 
           ! Set the charges
           call read_charges (s)
+
+          ! write out stuff to json file
+          write (s%jsonfile,'(A, I5, A)') '      "nstep":', itime_step, ','
+          write (s%jsonfile,'(A)') '      "cell":['
+          write (s%jsonfile,'(A, 3(F15.6, A), A)')                          &
+     &      '      [', s%lattice(1)%a(1), ',', s%lattice(1)%a(2), ',',      &
+     &                 s%lattice(1)%a(3),'],'
+          write (s%jsonfile,'(A, 3(F15.6, A), A)')                          &
+     &      '      [', s%lattice(2)%a(1), ',', s%lattice(2)%a(2), ',',      &
+     &                 s%lattice(2)%a(3),'],'
+          write (s%jsonfile,'(A, 3(F15.6, A), A)')                          &
+     &      '      [', s%lattice(3)%a(1), ',', s%lattice(3)%a(2), ',',      &
+     &                 s%lattice(3)%a(3),']],'
+
+          write (s%jsonfile,'(A)') '      "numbers":['
+          do iatom = 1, s%natoms - 1
+            in1 = s%atom(iatom)%imass
+            write (s%jsonfile,'(A, i3, A)') '            ', species(in1)%nZ, ','
+          end do
+          write (s%jsonfile,'(A, i3, A)') '            ', species(in1)%nZ, '],'
+
+          write (s%jsonfile,'(A)') '      "positions":['
+          do iatom = 1, s%natoms - 1
+            write (s%jsonfile,'(A, 3(F15.6, A), A)')                        &
+     &        '      [', s%atom(iatom)%ratom(1), ',',                       &
+     &                   s%atom(iatom)%ratom(2), ',',                       &
+     &                   s%atom(iatom)%ratom(3),'],'
+          end do
+          write (s%jsonfile,'(A, 3(F15.6, A), A)')                          &
+     &      '      [', s%atom(iatom)%ratom(1), ',',                         &
+     &                 s%atom(iatom)%ratom(2), ',',                         &
+     &                 s%atom(iatom)%ratom(3),']],'
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -372,8 +414,11 @@
             end if
             if (ifix_CHARGES .eq. 1) exit
           end do
-
           call writeout_energies (s, ebs, uii_uee, uxcdcc)
+
+          ! json output for energy
+          write (s%jsonfile,'(A, F15.6, A)') '      "energy":', etot, ','
+
           call writeout_xyz (s, ebs, uii_uee, uxcdcc)
 
           if (iwriteout_populations .eq. 1) call calculate_populations (s)
