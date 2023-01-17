@@ -267,7 +267,7 @@
           call read_charges (s)
 
           ! write out stuff to json file
-            write (s%jsonfile,'(A, I5, A)') '      "nstep":', itime_step, ','
+            write (s%jsonfile,'(A, I5, A)') '      "nstep":    1,'
             write (s%jsonfile,'(A)') '      "cell":['
             write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
      &        '      [', s%lattice(1)%a(1), ',', s%lattice(1)%a(2), ',',      &
