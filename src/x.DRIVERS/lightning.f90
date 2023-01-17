@@ -267,37 +267,38 @@
           call read_charges (s)
 
           ! write out stuff to json file
-            write (s%jsonfile,'(A, I5, A)') '      "nstep":    1,'
-            write (s%jsonfile,'(A)') '      "cell":['
-            write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
-     &        '      [', s%lattice(1)%a(1), ',', s%lattice(1)%a(2), ',',      &
-     &                   s%lattice(1)%a(3),'],'
-            write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
-     &        '      [', s%lattice(2)%a(1), ',', s%lattice(2)%a(2), ',',      &
-     &                   s%lattice(2)%a(3),'],'
-            write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                      &
-     &        '      [', s%lattice(3)%a(1), ',', s%lattice(3)%a(2), ',',      &
-     &                   s%lattice(3)%a(3),']],'
+          write (s%jsonfile,'(A)') '{'
+          write (s%jsonfile,'(A, I5, A)') '      "nstep":    1,'
+          write (s%jsonfile,'(A)') '      "cell":['
+          write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                        &
+     &      '      [', s%lattice(1)%a(1), ',', s%lattice(1)%a(2), ',',        &
+     &                 s%lattice(1)%a(3),'],'
+          write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                        &
+     &      '      [', s%lattice(2)%a(1), ',', s%lattice(2)%a(2), ',',        &
+     &                 s%lattice(2)%a(3),'],'
+          write (s%jsonfile,'(A, 2x, 3(F15.6, A), A)')                        &
+     &      '      [', s%lattice(3)%a(1), ',', s%lattice(3)%a(2), ',',        &
+     &                 s%lattice(3)%a(3),']],'
 
-            write (s%jsonfile,'(A)') '      "numbers":['
-            do iatom = 1, s%natoms - 1
-              in1 = s%atom(iatom)%imass
-              write (s%jsonfile,'(16x, i3, A)') species(in1)%nZ, ','
-            end do
-            in1 = s%atom(s%natoms)%imass
-            write (s%jsonfile,'(16x, i3, A)') species(in1)%nZ, '],'
+          write (s%jsonfile,'(A)') '      "numbers":['
+          do iatom = 1, s%natoms - 1
+            in1 = s%atom(iatom)%imass
+            write (s%jsonfile,'(16x, i3, A)') species(in1)%nZ, ','
+          end do
+          in1 = s%atom(s%natoms)%imass
+          write (s%jsonfile,'(16x, i3, A)') species(in1)%nZ, '],'
 
-            write (s%jsonfile,'(A)') '      "positions":['
-            do iatom = 1, s%natoms - 1
-              write (s%jsonfile,'(A, 6x, 3(F15.6, A), A)')                    &
-     &          '      [', s%atom(iatom)%ratom(1), ',',                       &
-     &                     s%atom(iatom)%ratom(2), ',',                       &
-     &                     s%atom(iatom)%ratom(3),'],'
-            end do
+          write (s%jsonfile,'(A)') '      "positions":['
+          do iatom = 1, s%natoms - 1
             write (s%jsonfile,'(A, 6x, 3(F15.6, A), A)')                      &
      &        '      [', s%atom(iatom)%ratom(1), ',',                         &
      &                   s%atom(iatom)%ratom(2), ',',                         &
-     &                   s%atom(iatom)%ratom(3),']],'
+     &                   s%atom(iatom)%ratom(3),'],'
+          end do
+          write (s%jsonfile,'(A, 6x, 3(F15.6, A), A)')                        &
+     &      '      [', s%atom(iatom)%ratom(1), ',',                           &
+     &                 s%atom(iatom)%ratom(2), ',',                           &
+     &                 s%atom(iatom)%ratom(3),']],'
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -422,7 +423,8 @@
           write (s%jsonfile,'(A, F15.6, A)') '      "fermi":', efermi, ','
 
           ! json output for energy
-          write (s%jsonfile,'(A, F15.6, A)') '      "energy":', etot, ','
+          write (s%jsonfile,'(A, F15.6, A)') '      "energy":', etot
+          write (s%jsonfile,'(A)') '}'
 
           call writeout_xyz (s, ebs, uii_uee, uxcdcc)
 
