@@ -250,7 +250,6 @@
             open (unit = s%jsonfile, file = sjsonfile, status = 'replace')
           end if
           write (s%jsonfile,'(A)') '{"fireball":['
-          write (s%jsonfile,'(A)') '{'
           write (ilogfile, 100) s%basisfile
 
           write (s%logfile,'(A)') 'Structure'
@@ -424,6 +423,7 @@
 
           ! json output for energy
           write (s%jsonfile,'(A, F15.6, A)') '      "energy":', etot
+          write (s%jsonfile,'(A)') ']}'
           write (s%jsonfile,'(A)') '}'
 
           call writeout_xyz (s, ebs, uii_uee, uxcdcc)
