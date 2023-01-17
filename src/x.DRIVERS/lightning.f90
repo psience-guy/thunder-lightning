@@ -423,8 +423,8 @@
 
           ! json output for energy
           write (s%jsonfile,'(A, F15.6, A)') '      "energy":', etot
-          write (s%jsonfile,'(A)') ']}'
           write (s%jsonfile,'(A)') '}'
+          write (s%jsonfile,'(A)') ']}'
 
           call writeout_xyz (s, ebs, uii_uee, uxcdcc)
 
