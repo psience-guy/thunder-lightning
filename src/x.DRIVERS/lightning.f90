@@ -442,10 +442,11 @@
           call destroy_assemble_vxc (s)
           call destroy_assemble_PP_2c (s)
           call destroy_assemble_ewald (s)
-          call destroy_neighbors (s)
-          call destroy_neighbors_PP (s)
+          call destroy_kspace (s)
 
           ! destroy neighbors last
+          call destroy_neighbors (s)
+          call destroy_neighbors_PP (s)
           call destroy_charges (s)
           deallocate (s%xl) ! where to put this?
 
