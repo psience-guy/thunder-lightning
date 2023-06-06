@@ -1,0 +1,4 @@
+ &XSFOPTIONS
+ rho_surface_min        =     0.0005
+ rho_surface_max        = 0.01000000
+ &END

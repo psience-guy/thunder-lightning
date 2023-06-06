@@ -244,8 +244,8 @@
             s%inpfile = istructure + 2000
             s%jsonfile = istructure + 3000
             slogfile = s%basisfile(:len(trim(s%basisfile)) - 4)
-            slogfile = trim(slogfile)//'.log'
             sjsonfile = trim(slogfile)//'.json'
+            slogfile = trim(slogfile)//'.log'
             open (unit = s%logfile, file = slogfile, status = 'replace')
             open (unit = s%jsonfile, file = sjsonfile, status = 'replace')
           end if

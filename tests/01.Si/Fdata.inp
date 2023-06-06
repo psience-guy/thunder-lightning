@@ -1,6 +1,3 @@
-4                                     ! Number of species
-1                                     ! atomic numbers                                    
-8
-13
-14
+1                                     ! Number of species
+14                                    ! atomic numbers
 Fdata                                 ! Fdata Location
