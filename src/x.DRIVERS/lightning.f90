@@ -64,7 +64,7 @@
 
 ! /GRID
         use M_grid
-        use M_isosurfaces
+!       use M_isosurfaces
 
 ! /ASSEMBLERS
         use M_assemble_2c
@@ -329,11 +329,11 @@
 !                  G R I D    I N I T I A L I Z A T I O N
 ! ---------------------------------------------------------------------------
 ! ===========================================================================
-          if (iwriteout_ewf .ne. 0) then
-            write (s%logfile, *)
-            write (s%logfile, *) ' Initialize the grid. '
-            call initialize_grid (s)
-          end if
+!         if (iwriteout_ewf .ne. 0) then
+!           write (s%logfile, *)
+!           write (s%logfile, *) ' Initialize the grid. '
+!           call initialize_grid (s)
+!         end if
 
 ! ===========================================================================
 ! ---------------------------------------------------------------------------
@@ -429,13 +429,13 @@
           call writeout_xyz (s, ebs, uii_uee, uxcdcc)
 
           if (iwriteout_populations .eq. 1) call calculate_populations (s)
-          if (iwriteout_ewf .ne. 0) call project_orbitals_grid (s, 1)
+!         if (iwriteout_ewf .ne. 0) call project_orbitals_grid (s, 1)
 
 ! Calculate the absorption spectrum.
           if (iwriteout_abs .eq. 1) call absorption (s)
 
 ! Destroy final arrays
-          if (iwriteout_ewf .ne. 0) call destroy_grid
+!         if (iwriteout_ewf .ne. 0) call destroy_grid
           call destroy_denmat (s)
           call destroy_assemble_2c (s)
           call destroy_assemble_vna (s)
