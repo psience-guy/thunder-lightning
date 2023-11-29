@@ -37,3 +37,6 @@
 results
 *.DS_Store
 autom4te.cache
+tests/01.Si/.ipynb_checkpoints/Si-checkpoint.ipynb
+tests/02.TiO2/WARNINGS
+tests/02.TiO2/.ipynb_checkpoints/TiO2-checkpoint.ipynb
